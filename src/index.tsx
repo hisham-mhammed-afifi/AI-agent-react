@@ -1,19 +1,81 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import { StrictMode } from "react";
+import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
+import ChatWidget, { ChatWidgetProps } from "./ChatWidget";
+import "./index.css";
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+class ChatBotElement extends HTMLElement {
+  // Observing attributes
+  static get observedAttributes() {
+    return ["title", "lang", "theme", "position", "direction"];
+  }
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+  // Handling attribute changes
+  attributeChangedCallback(
+    property: string,
+    oldValue: string,
+    newValue: string
+  ) {
+    if (oldValue !== newValue) {
+      console.log(
+        "ChatBotElement attribute changed",
+        property,
+        oldValue,
+        newValue
+      );
+      this.dataset[property] = newValue;
+      this.render();
+    }
+  }
+
+  connectedCallback() {
+    console.log("ChatBotElement connected", this);
+    this.render();
+  }
+
+  disconnectedCallback() {
+    ReactDOM.unmountComponentAtNode(this);
+  }
+
+  render = () => {
+    const { title, lang, theme, position, direction } = this.dataset;
+    const props: ChatWidgetProps = {
+      id: this.id,
+      title,
+      lang,
+      theme,
+      position,
+      direction,
+    };
+
+    console.log("ChatBotElement props", props);
+
+    ReactDOM.render(<ChatWidget {...props} />, this, () => {
+      this.style.display = "block";
+    });
+  };
+}
+
+customElements.define("chat-bot-widget", ChatBotElement);
+
+if (process.env.NODE_ENV === "development") {
+  const rootElement = document.getElementById("root");
+
+  if (rootElement) {
+    const root = createRoot(rootElement);
+    const props = {
+      id: "chat-widget",
+      title: "Chatbot",
+      lang: "en",
+      theme: "light",
+      position: "bottom-right",
+      direction: "ltr",
+    };
+
+    root.render(
+      <StrictMode>
+        <ChatWidget {...props} />
+      </StrictMode>
+    );
+  }
+}
